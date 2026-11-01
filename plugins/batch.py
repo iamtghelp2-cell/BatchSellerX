@@ -93,25 +93,31 @@ async def get_msg(c, u, i, d, lt):
         if lt == 'public':
             try:
                 if str(i).lower().endswith('bot'):
-                    emp[i] = False
                     xm = await u.get_messages(i, d)
-                    emp[i] = getattr(xm, "empty", False)
-                    if not emp[i]:
+                    if not getattr(xm, "empty", False):
                         emp[i] = True
-                        print(f"Bot chat found successfully...")
+                        print("Bot chat found successfully...")
                         return xm
-                    
-                if emp[i]:
+                    return None
+
+                # normal public channel/group: pehle bot se, na mile to user session se
+                emp[i] = False
+                xm = None
+                try:
                     xm = await c.get_messages(i, d)
                     print(f"fetched by {c.me.username}")
-                    emp[i] = getattr(xm, "empty", False)
-                    if emp[i]:
-                        print(f"Not fetched by {c.me.username}")
-                        try: await u.join_chat(i)
-                        except: pass
-                        xm = await u.get_messages((await u.get_chat(f"@{i}")).id, d)
-                    
-                    return xm                   
+                except Exception as e:
+                    print(f"bot fetch failed: {e}")
+                if xm is None or getattr(xm, "empty", False):
+                    emp[i] = True
+                    if not u:
+                        return None
+                    try: await u.join_chat(i)
+                    except: pass
+                    xm = await u.get_messages((await u.get_chat(f"@{i}")).id, d)
+                    if getattr(xm, "empty", False):
+                        return None
+                return xm
             except Exception as e:
                 print(f'Error fetching public message: {e}')
                 return None
@@ -438,7 +444,7 @@ async def text_handler(c, m):
     s = Z[uid].get('step')
     x = await get_ubot(uid)
     if not x:
-        await message.reply("Add your bot /setbot `token`")
+        await m.reply("Add your bot /setbot `token`")
         return
 
     if s == 'start':
@@ -561,6 +567,3 @@ async def text_handler(c, m):
         finally:
             await remove_active_batch(uid)
             Z.pop(uid, None)
-
-
-

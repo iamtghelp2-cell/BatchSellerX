@@ -23,6 +23,22 @@ DEFAULT_SUBJECTS = dict(KEYWORDS)
 DEFAULT_SUBJECTS[GENERAL] = []
 
 
+def _is_forum(chat):
+    """Topics wale group ko pehchano (pyrofork me type == FORUM hota hai)."""
+    if chat is None:
+        return False
+    if getattr(chat, "is_forum", None):
+        return True
+    return getattr(chat, "type", None) == enums.ChatType.FORUM
+
+
+async def _group_or_forum(_, __, m):
+    return bool(m.chat and m.chat.type in (enums.ChatType.GROUP, enums.ChatType.SUPERGROUP, enums.ChatType.FORUM))
+
+
+group_or_forum = filters.create(_group_or_forum)
+
+
 def _norm(text):
     return f" {(text or '').lower()} "
 
@@ -89,7 +105,7 @@ async def _ensure_topics(chat_id):
         _tried[chat_id] = time.time()
         try:
             chat = await app.get_chat(chat_id)
-            if not getattr(chat, "is_forum", False):
+            if not _is_forum(chat):
                 logger.error(f"auto topics: {chat_id} me Topics ON nahi hain")
                 return
             created, err = await setup_topics(chat_id)
@@ -159,7 +175,7 @@ async def on_bot_admin(client, upd):
         if new.status != enums.ChatMemberStatus.ADMINISTRATOR:
             return
         chat = upd.chat
-        if not getattr(chat, "is_forum", False):
+        if not _is_forum(chat):
             await client.send_message(
                 chat.id,
                 "ℹ️ Is group me **Topics** chalu nahi hain.\n"
@@ -202,11 +218,11 @@ async def _allowed(client, message):
 
 
 # ── Commands (owner / group admin) ─────────────────────────────────────────────
-@app.on_message(filters.command("synctopics") & filters.group)
+@app.on_message(filters.command("synctopics") & group_or_forum)
 async def sync_cmd(client, message):
     if not await _allowed(client, message):
         return
-    if not getattr(message.chat, "is_forum", False):
+    if not _is_forum(message.chat):
         await message.reply(f"Pehle group me Topics ON karo.\n🆔 Group ID: `{message.chat.id}`")
         return
     created, err = await setup_topics(message.chat.id)
@@ -214,18 +230,18 @@ async def sync_cmd(client, message):
     await message.reply(res + f"\n\n🆔 Group ID: `{message.chat.id}`\n/settings → SETCHATID me yahi ID daalo.")
 
 
-@app.on_message(filters.command("chatid") & filters.group)
+@app.on_message(filters.command("chatid") & group_or_forum)
 async def chatid_cmd(client, message):
     if not await _allowed(client, message):
         return
     await message.reply(
         f"🆔 Group ID: `{message.chat.id}`\n"
-        f"Topics: {'ON ✅' if getattr(message.chat, 'is_forum', False) else 'OFF ❌'}\n\n"
+        f"Topics: {'ON ✅' if _is_forum(message.chat) else 'OFF ❌'}\n\n"
         "/settings → SETCHATID me yahi ID daalo."
     )
 
 
-@app.on_message(filters.command("topics") & filters.group)
+@app.on_message(filters.command("topics") & group_or_forum)
 async def list_cmd(client, message):
     if not await _allowed(client, message):
         return
@@ -238,7 +254,7 @@ async def list_cmd(client, message):
                         "\n\n`/addkw Subject keyword` se keyword jodo.")
 
 
-@app.on_message(filters.command("addkw") & filters.group)
+@app.on_message(filters.command("addkw") & group_or_forum)
 async def addkw_cmd(client, message):
     if not await _allowed(client, message):
         return

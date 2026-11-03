@@ -6,7 +6,7 @@ import re
 import time
 import asyncio
 import logging
-from pyrogram import filters, enums
+from pyrogram import filters, enums, raw
 from shared_client import app
 from config import OWNER_ID
 from utils.func import db
@@ -141,6 +141,32 @@ async def resolve_topic(cfg_chat, text):
     return chat_id, None
 
 
+def _topic_id_from(res):
+    """messages.CreateForumTopic ke result se naye topic ka id nikalta hai."""
+    updates = getattr(res, "updates", None) or []
+    for u in updates:
+        m = getattr(u, "message", None)
+        if m is not None and type(getattr(m, "action", None)).__name__ == "MessageActionTopicCreate":
+            return m.id
+    for u in updates:
+        m = getattr(u, "message", None)
+        if m is not None and getattr(m, "id", None):
+            return m.id
+    raise RuntimeError("topic id nahi mila")
+
+
+async def create_topic(chat_id, title):
+    """pyrofork ka create_forum_topic is version me tuta hua hai, isliye seedha raw API call."""
+    r = await app.invoke(
+        raw.functions.messages.CreateForumTopic(
+            peer=await app.resolve_peer(chat_id),
+            title=title,
+            random_id=app.rnd_id(),
+        )
+    )
+    return _topic_id_from(r)
+
+
 async def setup_topics(chat_id):
     """Group me missing subject topics banata hai. Return (created, failed_reason)."""
     doc = await _get_doc(chat_id) or {"chat_id": int(chat_id), "subjects": {}}
@@ -154,9 +180,10 @@ async def setup_topics(chat_id):
             subjects[name] = {"id": None, "kw": []}
             continue
         try:
-            t = await app.create_forum_topic(chat_id, name)
-            subjects[name] = {"id": t.id, "kw": kws}
+            tid = await create_topic(chat_id, name)
+            subjects[name] = {"id": tid, "kw": kws}
             created.append(name)
+            await asyncio.sleep(0.7)  # flood se bachne ke liye
         except Exception as e:
             if created or subjects:
                 await topics_col.update_one({"chat_id": int(chat_id)}, {"$set": {"subjects": subjects}}, upsert=True)

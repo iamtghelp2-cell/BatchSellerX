@@ -4,8 +4,8 @@
 # See LICENSE file in the repository root for full license text.
 
 import os, re, time, asyncio, json, asyncio 
-from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram import Client, filters, enums
+from pyrogram.types import Message, InlineKeyboardMarkup
 from pyrogram.errors import UserNotParticipant
 from config import API_ID, API_HASH, LOG_GROUP, STRING, FORCE_SUB, FREEMIUM_LIMIT, PREMIUM_LIMIT
 from utils.func import get_user_data, screenshot, thumbnail, get_video_metadata
@@ -223,10 +223,52 @@ async def prog(c, t, C, h, m, st):
         await C.edit_message_text(h, m, f"__**Pyro Handler...**__\n\n{bar}\n\n⚡**__Completed__**: {c_mb:.2f} MB / {t_mb:.2f} MB\n📊 **__Done__**: {p:.2f}%\n🚀 **__Speed__**: {speed:.2f} MB/s\n⏳ **__ETA__**: {eta}\n\n**__Powered by iamtghelp__**")
         if p >= 100: P.pop(m, None)
 
-async def send_direct(c, m, tcid, ft=None, rtmid=None):
+# link-preview wale message (jaise YouTube link) ka media type; naam pyrofork version ke hisaab se alag hota hai
+_WEBPAGE_TYPES = {getattr(enums.MessageMediaType, _n) for _n in ('WEB_PAGE', 'WEB_PAGE_PREVIEW') if hasattr(enums.MessageMediaType, _n)}
+
+
+_MD_LINK = re.compile(r'(\[[^\]]*\]\()([^)\s]+)(\))')
+
+
+def _safe_md_links(text):
+    """Markdown fallback me URL ke andar _ aur * se link tutta tha (jaise abc_def__ghi) -> unhe encode kar do."""
+    if not text:
+        return text
+    return _MD_LINK.sub(lambda mo: mo.group(1) + mo.group(2).replace('_', '%5F').replace('*', '%2A') + mo.group(3), text)
+
+
+def _capkw(ft, exact, include=True):
+    """
+    Caption ke kwargs. exact = (plain_text, entities) ho to original post ka format/links bilkul waise hi
+    (markdown me badle bina) copy hote hain; warna ft (markdown) bheji jaati hai.
+    """
+    if not include:
+        return {'caption': None}
+    if exact:
+        return {'caption': exact[0], 'caption_entities': exact[1] or None, 'parse_mode': enums.ParseMode.DISABLED}
+    return {'caption': ft}
+
+
+def _kb(m):
+    """Original post ke inline URL buttons (jaise YouTube link wala button) saath bhejne ke liye."""
+    try:
+        rm = getattr(m, 'reply_markup', None)
+        rows = getattr(rm, 'inline_keyboard', None) if rm else None
+        if rows:
+            keep = [[b for b in row if getattr(b, 'url', None)] for row in rows]
+            keep = [r for r in keep if r]
+            if keep:
+                return InlineKeyboardMarkup(keep)
+    except Exception:
+        pass
+    return None
+
+
+async def send_direct(c, m, tcid, ft=None, rtmid=None, exact=None):
+    kb = _kb(m)
     try:
         if m.video:
-            await c.send_video(tcid, m.video.file_id, caption=ft, duration=m.video.duration, width=m.video.width, height=m.video.height, reply_to_message_id=rtmid)
+            await c.send_video(tcid, m.video.file_id, **_capkw(ft, exact), duration=m.video.duration, width=m.video.width, height=m.video.height, reply_markup=kb, reply_to_message_id=rtmid)
         elif m.video_note:
             await c.send_video_note(tcid, m.video_note.file_id, reply_to_message_id=rtmid)
         elif m.voice:
@@ -234,12 +276,12 @@ async def send_direct(c, m, tcid, ft=None, rtmid=None):
         elif m.sticker:
             await c.send_sticker(tcid, m.sticker.file_id, reply_to_message_id=rtmid)
         elif m.audio:
-            await c.send_audio(tcid, m.audio.file_id, caption=ft, duration=m.audio.duration, performer=m.audio.performer, title=m.audio.title, reply_to_message_id=rtmid)
+            await c.send_audio(tcid, m.audio.file_id, **_capkw(ft, exact), duration=m.audio.duration, performer=m.audio.performer, title=m.audio.title, reply_markup=kb, reply_to_message_id=rtmid)
         elif m.photo:
             photo_id = m.photo.file_id if hasattr(m.photo, 'file_id') else m.photo[-1].file_id
-            await c.send_photo(tcid, photo_id, caption=ft, reply_to_message_id=rtmid)
+            await c.send_photo(tcid, photo_id, **_capkw(ft, exact), reply_markup=kb, reply_to_message_id=rtmid)
         elif m.document:
-            await c.send_document(tcid, m.document.file_id, caption=ft, file_name=m.document.file_name, reply_to_message_id=rtmid)
+            await c.send_document(tcid, m.document.file_id, **_capkw(ft, exact), file_name=m.document.file_name, reply_markup=kb, reply_to_message_id=rtmid)
         else:
             return False
         return True
@@ -260,16 +302,24 @@ async def process_msg(c, u, m, d, lt, uid, i):
                 if _o and getattr(_o, 'file_name', None):
                     hint_parts.append(_o.file_name)
             hint_parts.append((m.caption or m.text or '') if (m.caption or m.text) else '')
-            tcid, rtmid = await resolve_topic(cfg_chat, ' '.join(str(x) for x in hint_parts))
+            _is_file = bool(m.media) and m.media not in _WEBPAGE_TYPES
+            tcid, rtmid = await resolve_topic(cfg_chat, ' '.join(str(x) for x in hint_parts), sticky=not _is_file)
         
-        if m.media:
+        kb = _kb(m)
+        # YouTube jaise link wale message ka media WEB_PAGE hota hai -> usse file ki tarah download nahi karna, text ki tarah bhejna hai
+        if m.media and m.media not in _WEBPAGE_TYPES:
             orig_text = m.caption.markdown if m.caption else ''
             proc_text = await process_text_with_rules(d, orig_text)
             user_cap = await get_user_data_key(d, 'caption', '')
             ft = f'{proc_text}\n\n{user_cap}' if proc_text and user_cap else user_cap if user_cap else proc_text
+            ft = _safe_md_links(ft)
+            # koi rule/caption set nahi hai to original caption ko entities ke saath jas ka tas copy karo (links na tootein)
+            exact = None
+            if m.caption and not user_cap and proc_text == orig_text:
+                exact = (str(m.caption), list(getattr(m.caption, 'entities', None) or []))
             
             if lt == 'public' and not emp.get(i, False):
-                await send_direct(c, m, tcid, ft, rtmid)
+                await send_direct(c, m, tcid, ft, rtmid, exact)
                 return 'Sent directly.'
             
             st = time.time()
@@ -332,11 +382,11 @@ async def process_msg(c, u, m, d, lt, uid, i):
                                         duration=dur if mtype == 'video' else None,
                                         height=h if mtype == 'video' else None,
                                         width=w if mtype == 'video' else None,
-                                        caption=ft if m.caption and mtype not in ['video_note', 'voice'] else None, 
+                                        **_capkw(ft, exact, bool(m.caption) and mtype not in ['video_note', 'voice']), 
                                         reply_to_message_id=rtmid, progress=prog, progress_args=(c, d, p.id, st))
                         break
                 else:
-                    sent = await Y.send_document(LOG_GROUP, f, thumb=th, caption=ft if m.caption else None,
+                    sent = await Y.send_document(LOG_GROUP, f, thumb=th, **_capkw(ft, exact, bool(m.caption)),
                                                 reply_to_message_id=rtmid, progress=prog, progress_args=(c, d, p.id, st))
                 
                 await c.copy_message(d, LOG_GROUP, sent.id)
@@ -356,10 +406,10 @@ async def process_msg(c, u, m, d, lt, uid, i):
                     mtd = await get_video_metadata(f)
                     dur, h, w = mtd['duration'], mtd['width'], mtd['height']
                     th = await screenshot(f, dur, d)
-                    await c.send_video(tcid, video=f, caption=ft if m.caption else None, 
+                    await c.send_video(tcid, video=f, **_capkw(ft, exact, bool(m.caption)), 
                                     thumb=th, width=w, height=h, duration=dur, 
                                     progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
+                                    reply_markup=kb, reply_to_message_id=rtmid)
                 elif m.video_note:
                     await c.send_video_note(tcid, video_note=f, progress=prog, 
                                         progress_args=(c, d, p.id, st), reply_to_message_id=rtmid)
@@ -369,21 +419,21 @@ async def process_msg(c, u, m, d, lt, uid, i):
                 elif m.sticker:
                     await c.send_sticker(tcid, m.sticker.file_id, reply_to_message_id=rtmid)
                 elif m.audio or (m.document and file_ext in audio_extensions):
-                    await c.send_audio(tcid, audio=f, caption=ft if m.caption else None, 
+                    await c.send_audio(tcid, audio=f, **_capkw(ft, exact, bool(m.caption)), 
                                     thumb=th, progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
+                                    reply_markup=kb, reply_to_message_id=rtmid)
                 elif m.photo:
-                    await c.send_photo(tcid, photo=f, caption=ft if m.caption else None, 
+                    await c.send_photo(tcid, photo=f, **_capkw(ft, exact, bool(m.caption)), 
                                     progress=prog, progress_args=(c, d, p.id, st), 
-                                    reply_to_message_id=rtmid)
+                                    reply_markup=kb, reply_to_message_id=rtmid)
                 elif m.document:
-                    await c.send_document(tcid, document=f, caption=ft if m.caption else None, 
+                    await c.send_document(tcid, document=f, **_capkw(ft, exact, bool(m.caption)), 
                                         progress=prog, progress_args=(c, d, p.id, st), 
-                                        reply_to_message_id=rtmid)
+                                        reply_markup=kb, reply_to_message_id=rtmid)
                 else:
-                    await c.send_document(tcid, document=f, caption=ft if m.caption else None, 
+                    await c.send_document(tcid, document=f, **_capkw(ft, exact, bool(m.caption)), 
                                         progress=prog, progress_args=(c, d, p.id, st), 
-                                        reply_to_message_id=rtmid)
+                                        reply_markup=kb, reply_to_message_id=rtmid)
             except Exception as e:
                 await c.edit_message_text(d, p.id, f'Upload failed: {str(e)[:30]}')
                 if os.path.exists(f): os.remove(f)
@@ -395,7 +445,7 @@ async def process_msg(c, u, m, d, lt, uid, i):
             return 'Done.'
             
         elif m.text:
-            await c.send_message(tcid, text=m.text.markdown, reply_to_message_id=rtmid)
+            await c.send_message(tcid, text=str(m.text), entities=list(getattr(m.text, 'entities', None) or []) or None, parse_mode=enums.ParseMode.DISABLED, reply_markup=kb, reply_to_message_id=rtmid)
             return 'Sent.'
     except Exception as e:
         return f'Error: {str(e)[:50]}'

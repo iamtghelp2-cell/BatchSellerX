@@ -1,12 +1,13 @@
-# iamtghelp - Subject wise chapter keywords
+# iamtghelp - Subject wise chapter keywords (SSC GD / Bihar style topics)
 # Video/PDF ke naam ya caption me inme se koi bhi shabd mile to wo us subject ke topic me jaayega.
 # Naya chapter jodna ho to us subject ki list me ek shabd (lowercase) add kar do.
 # English keywords shabd ke shuru se match hote hain (jaise "tense" => "tenses" me mile, "intense" me nahi).
 # Chhote (<=3 akshar) keywords poore shabd ki tarah match hote hain.
+# Order = group me topics isi kram me banenge.
 
 KEYWORDS = {
 
-    # ── Maths (233 keywords)
+    # -- Maths (233 keywords)
     "Maths": [
         "maths", "math ", "mathematics", "गणित", "ganit", "quant", "quantitative", "arithmetic", "अंकगणित",
         "number system", "संख्या पद्धति", "sankhya paddhati", "natural number", "whole number",
@@ -43,7 +44,7 @@ KEYWORDS = {
         "trains", "रेलगाड़ी पर प्रश्न",
     ],
 
-    # ── Reasoning (128 keywords)
+    # -- Reasoning (128 keywords)
     "Reasoning": [
         "reasoning", "रीजनिंग", "तर्कशक्ति", "तर्क शक्ति", "mental ability", "mental aptitude",
         "logical reasoning", "verbal reasoning", "non verbal", "non-verbal", "analytical reasoning",
@@ -70,7 +71,39 @@ KEYWORDS = {
         "visual reasoning", "rule detection",
     ],
 
-    # ── Physics (117 keywords)
+    # -- English (76 keywords)
+    "English": [
+        "english", "grammar", "अंग्रेजी", "अंग्रेज़ी", "tense", "tenses", "preposition", "prepositions",
+        "conjunction", "conjunctions", "pronoun", "adjective", "adverb", "verb", "modals", "modal verbs",
+        "determiners", "subject verb agreement", "subject-verb", "sva", "active passive", "active voice",
+        "passive voice", "narration", "direct indirect", "direct speech", "reported speech",
+        "error detection", "error spotting", "spotting the error", "spot the error", "sentence improvement",
+        "sentence correction", "fill in the blanks", "fill in blanks", "cloze test", "cloze",
+        "reading comprehension", "comprehension", "para jumbles", "para jumble", "sentence rearrangement",
+        "jumbled", "one word substitution", "one word", "idioms", "phrases", "idioms and phrases",
+        "phrasal verb", "phrasal verbs", "synonyms", "antonyms", "synonym", "antonym", "spelling", "vocab",
+        "vocabulary", "word power", "homonyms", "homophones", "parts of speech", "degrees of comparison",
+        "clauses", "phrase", "question tag", "conditionals", "if clause", "letter writing", "essay writing",
+        "précis", "precis", "english literature", "articles in english", "a an the", "nouns",
+        "noun and pronoun",
+    ],
+
+    # -- Hindi (83 keywords)
+    "Hindi": [
+        "hindi", "हिंदी", "हिन्दी", "vyakaran", "व्याकरण", "हिंदी व्याकरण", "हिन्दी व्याकरण", "sandhi",
+        "संधि", "samas", "समास", "alankar", "अलंकार", "chhand", "छंद", "muhavare", "मुहावरे", "मुहावरा",
+        "lokokti", "लोकोक्ति", "कहावत", "paryayvachi", "पर्यायवाची", "paryayvaachi", "vilom", "विलोम",
+        "विपरीतार्थक", "anekarthi", "अनेकार्थी", "अनेकार्थक", "शब्द भेद", "शब्द शुद्धि", "वर्तनी",
+        "वाक्य शुद्धि", "वाक्यांश के लिए एक शब्द", "एक शब्द", "ek shabd", "अनेक शब्दों के लिए एक शब्द",
+        "upsarg", "उपसर्ग", "pratyay", "प्रत्यय", "karak", "कारक", "sarvanam", "सर्वनाम", "visheshan",
+        "विशेषण", "kriya", "क्रिया", "avyay", "अव्यय", "sangya", "संज्ञा", "vachya", "वाच्य", "तत्सम",
+        "तद्भव", "tatsam", "tadbhav", "देशज", "विदेशी शब्द", "apathit", "अपठित", "गद्यांश", "पद्यांश",
+        "patra lekhan", "पत्र लेखन", "nibandh", "निबंध", "हिंदी साहित्य", "हिन्दी साहित्य", "देवनागरी",
+        "वर्ण विचार", "विराम चिह्न", "रचना के आधार", "वाक्य भेद", "पदबंध", "हिंदी भाषा का इतिहास", "अशुद्धि",
+        "शुद्ध अशुद्ध", "रस के भेद", "vakya shuddhi",
+    ],
+
+    # -- Physics (117 keywords)
     "Physics": [
         "physics", "phy ", "भौतिक", "भौतिकी", "फिजिक्स", "bhautik", "units and measurement", "मात्रक",
         "इकाई एवं मापन", "kinematics", "गतिकी", "equation of motion", "projectile", "प्रक्षेप्य", "newton",
@@ -91,7 +124,7 @@ KEYWORDS = {
         "pressure and fluids",
     ],
 
-    # ── Chemistry (87 keywords)
+    # -- Chemistry (87 keywords)
     "Chemistry": [
         "chemistry", "chem ", "रसायन", "रसायन विज्ञान", "केमिस्ट्री", "rasayan", "periodic table",
         "आवर्त सारणी", "आवर्त तालिका", "atomic structure", "परमाणु संरचना", "परमाणु की संरचना",
@@ -109,7 +142,7 @@ KEYWORDS = {
         "water chemistry", "matter chemistry",
     ],
 
-    # ── Biology (109 keywords)
+    # -- Biology (109 keywords)
     "Biology": [
         "biology", "bio ", "जीव विज्ञान", "जीवविज्ञान", "बायोलॉजी", "jeev vigyan", "botany",
         "वनस्पति विज्ञान", "zoology", "जंतु विज्ञान", "कोशिका", "koshika", "tissue", "ऊतक", "plant kingdom",
@@ -129,46 +162,7 @@ KEYWORDS = {
         "cell biology", "cell structure", "cell division", "जैव विकास", "genes", "genetic", "hereditary",
     ],
 
-    # ── Hindi (83 keywords)
-    "Hindi": [
-        "hindi", "हिंदी", "हिन्दी", "vyakaran", "व्याकरण", "हिंदी व्याकरण", "हिन्दी व्याकरण", "sandhi",
-        "संधि", "samas", "समास", "alankar", "अलंकार", "chhand", "छंद", "muhavare", "मुहावरे", "मुहावरा",
-        "lokokti", "लोकोक्ति", "कहावत", "paryayvachi", "पर्यायवाची", "paryayvaachi", "vilom", "विलोम",
-        "विपरीतार्थक", "anekarthi", "अनेकार्थी", "अनेकार्थक", "शब्द भेद", "शब्द शुद्धि", "वर्तनी",
-        "वाक्य शुद्धि", "वाक्यांश के लिए एक शब्द", "एक शब्द", "ek shabd", "अनेक शब्दों के लिए एक शब्द",
-        "upsarg", "उपसर्ग", "pratyay", "प्रत्यय", "karak", "कारक", "sarvanam", "सर्वनाम", "visheshan",
-        "विशेषण", "kriya", "क्रिया", "avyay", "अव्यय", "sangya", "संज्ञा", "vachya", "वाच्य", "तत्सम",
-        "तद्भव", "tatsam", "tadbhav", "देशज", "विदेशी शब्द", "apathit", "अपठित", "गद्यांश", "पद्यांश",
-        "patra lekhan", "पत्र लेखन", "nibandh", "निबंध", "हिंदी साहित्य", "हिन्दी साहित्य", "देवनागरी",
-        "वर्ण विचार", "विराम चिह्न", "रचना के आधार", "वाक्य भेद", "पदबंध", "हिंदी भाषा का इतिहास", "अशुद्धि",
-        "शुद्ध अशुद्ध", "रस के भेद", "vakya shuddhi",
-    ],
-
-    # ── English (76 keywords)
-    "English": [
-        "english", "grammar", "अंग्रेजी", "अंग्रेज़ी", "tense", "tenses", "preposition", "prepositions",
-        "conjunction", "conjunctions", "pronoun", "adjective", "adverb", "verb", "modals", "modal verbs",
-        "determiners", "subject verb agreement", "subject-verb", "sva", "active passive", "active voice",
-        "passive voice", "narration", "direct indirect", "direct speech", "reported speech",
-        "error detection", "error spotting", "spotting the error", "spot the error", "sentence improvement",
-        "sentence correction", "fill in the blanks", "fill in blanks", "cloze test", "cloze",
-        "reading comprehension", "comprehension", "para jumbles", "para jumble", "sentence rearrangement",
-        "jumbled", "one word substitution", "one word", "idioms", "phrases", "idioms and phrases",
-        "phrasal verb", "phrasal verbs", "synonyms", "antonyms", "synonym", "antonym", "spelling", "vocab",
-        "vocabulary", "word power", "homonyms", "homophones", "parts of speech", "degrees of comparison",
-        "clauses", "phrase", "question tag", "conditionals", "if clause", "letter writing", "essay writing",
-        "précis", "precis", "english literature", "articles in english", "a an the", "nouns",
-        "noun and pronoun",
-    ],
-
-    # ── Sanskrit (21 keywords)
-    "Sanskrit": [
-        "sanskrit", "संस्कृत", "शब्द रूप", "शब्दरूप", "shabd roop", "धातु रूप", "धातुरूप", "dhatu roop",
-        "श्लोक", "shlok", "लकार", "lakar", "संस्कृत व्याकरण", "सुभाषित", "संस्कृत साहित्य", "अव्यय संस्कृत",
-        "कारक विभक्ति", "विभक्ति", "vibhakti", "पाठ संस्कृत", "अनुवाद संस्कृत",
-    ],
-
-    # ── History (99 keywords)
+    # -- History (99 keywords)
     "History": [
         "history", "इतिहास", "itihas", "ancient history", "प्राचीन इतिहास", "प्राचीन भारत",
         "medieval history", "मध्यकालीन", "मध्यकालीन इतिहास", "modern history", "आधुनिक इतिहास",
@@ -187,7 +181,7 @@ KEYWORDS = {
         "मौर्य वंश", "मौर्य काल", "gandhi era", "गांधी युग", "harshvardhan", "भारत का स्वतंत्रता संग्राम",
     ],
 
-    # ── Geography (119 keywords)
+    # -- Geography (125 keywords)
     "Geography": [
         "geography", "भूगोल", "bhugol", "indian geography", "भारत का भूगोल", "world geography",
         "विश्व भूगोल", "physical geography", "भौतिक भूगोल", "human geography", "मानव भूगोल",
@@ -204,10 +198,11 @@ KEYWORDS = {
         "minerals", "खनिज", "mining", "खनन", "industries", "उद्योग", "energy resources", "ऊर्जा संसाधन",
         "population", "जनसंख्या", "census", "जनगणना", "transport", "परिवहन", "national park",
         "राष्ट्रीय उद्यान", "wildlife sanctuary", "अभयारण्य", "map", "मानचित्र", "bihar geography",
-        "बिहार का भूगोल", "revolution and rotation", "earth rotation", "पृथ्वी की गतियां",
+        "बिहार का भूगोल", "revolution and rotation", "earth rotation", "पृथ्वी की गतियां", "india size",
+        "size and location", "location and extent", "भारत का आकार", "भारत की स्थिति", "india location",
     ],
 
-    # ── Polity (88 keywords)
+    # -- Polity (88 keywords)
     "Polity": [
         "polity", "civics", "constitution", "संविधान", "भारतीय संविधान", "राजव्यवस्था", "rajvyavastha",
         "राजनीति", "राजनीति विज्ञान", "नागरिक शास्त्र", "नागरिकशास्त्र", "preamble", "प्रस्तावना",
@@ -225,7 +220,7 @@ KEYWORDS = {
         "सूचना का अधिकार", "political science", "human rights", "मानवाधिकार",
     ],
 
-    # ── Economics (78 keywords)
+    # -- Economics (78 keywords)
     "Economics": [
         "economics", "economy", "अर्थशास्त्र", "अर्थव्यवस्था", "arthvyavastha", "indian economy",
         "भारतीय अर्थव्यवस्था", "gdp", "gnp", "national income", "राष्ट्रीय आय", "inflation", "मुद्रास्फीति",
@@ -242,38 +237,32 @@ KEYWORDS = {
         "demand supply", "मांग पूर्ति", "economic planning",
     ],
 
-    # ── Science (19 keywords)
-    "Science": [
-        "general science", "सामान्य विज्ञान", "science", "विज्ञान", "vigyan", "science and technology",
-        "विज्ञान एवं प्रौद्योगिकी", "space", "अंतरिक्ष", "isro", "इसरो", "satellite", "उपग्रह",
-        "defence technology", "रक्षा प्रौद्योगिकी", "missile", "मिसाइल", "inventions", "आविष्कार",
-    ],
-
-    # ── GK-GS (64 keywords)
-    "GK-GS": [
+    # -- Static GK (57 keywords)
+    "Static GK": [
         "gk", "gs", "g.k", "g.s", "general knowledge", "general studies", "सामान्य ज्ञान", "सामान्य अध्ययन",
-        "samanya gyan", "current affairs", "करेंट अफेयर्स", "करंट अफेयर्स", "समसामयिकी", "static gk",
-        "स्टैटिक जीके", "bihar gk", "बिहार जीके", "बिहार सामान्य ज्ञान", "bihar special", "india gk",
-        "world gk", "awards", "पुरस्कार", "books and authors", "पुस्तकें और लेखक", "important days",
-        "महत्वपूर्ण दिवस", "sports", "खेलकूद", "olympic", "ओलंपिक", "states and capitals",
-        "राज्य और राजधानी", "राजधानी", "national symbols", "राष्ट्रीय चिह्न", "important places",
-        "महत्वपूर्ण स्थल", "schemes", "योजनाएं", "government schemes", "सरकारी योजनाएं", "appointments",
-        "नियुक्तियां", "summits", "reports and indices", "रिपोर्ट एवं सूचकांक", "सूचकांक", "रक्षा क्षेत्र",
-        "dance", "नृत्य", "music", "संगीत", "festival", "त्योहार", "fairs", "मेले", "world organisations",
-        "editorial", "gk trick", "जीके ट्रिक", "one liner", "वन लाइनर", "मैराथन",
+        "samanya gyan", "static gk", "स्टैटिक जीके", "bihar gk", "बिहार जीके", "बिहार सामान्य ज्ञान",
+        "bihar special", "india gk", "world gk", "awards", "पुरस्कार", "books and authors",
+        "पुस्तकें और लेखक", "important days", "महत्वपूर्ण दिवस", "sports", "खेलकूद", "olympic", "ओलंपिक",
+        "states and capitals", "राज्य और राजधानी", "राजधानी", "national symbols", "राष्ट्रीय चिह्न",
+        "important places", "महत्वपूर्ण स्थल", "schemes", "योजनाएं", "government schemes", "सरकारी योजनाएं",
+        "सूचकांक", "रक्षा क्षेत्र", "dance", "नृत्य", "music", "संगीत", "festival", "त्योहार", "fairs",
+        "मेले", "world organisations", "gk trick", "जीके ट्रिक", "one liner", "वन लाइनर", "gk darshan",
+        "जीके दर्शन", "static gs", "स्टैटिक gk",
     ],
 
-    # ── Computer (59 keywords)
-    "Computer": [
-        "computer", "कंप्यूटर", "कम्प्यूटर", "computer awareness", "computer knowledge", "ms word",
-        "ms excel", "powerpoint", "ms powerpoint", "ms office", "internet", "इंटरनेट", "email", "ई-मेल",
-        "hardware", "हार्डवेयर", "software", "सॉफ्टवेयर", "operating system", "ऑपरेटिंग सिस्टम", "windows",
-        "विंडोज", "linux", "networking", "नेटवर्किंग", "database", "डेटाबेस", "dbms", "मेमोरी", "ram", "rom",
-        "cpu", "सीपीयू", "input output devices", "इनपुट आउटपुट डिवाइस", "generation of computer",
-        "कंप्यूटर की पीढ़ी", "number system computer", "बाइनरी", "binary", "shortcut keys", "शॉर्टकट कीज",
-        "keyboard shortcut", "cyber", "साइबर", "cyber security", "साइबर सुरक्षा", "virus computer",
-        "programming", "प्रोग्रामिंग", "html", "python", "typing", "टाइपिंग", "tally", "टैली",
-        "internet of things", "artificial intelligence", "कृत्रिम बुद्धिमत्ता",
+    # -- Current Affairs (24 keywords)
+    "Current Affairs": [
+        "current affairs", "current affair", "करेंट अफेयर्स", "करंट अफेयर्स", "करेंट अफेयर", "करंट अफेयर",
+        "समसामयिकी", "समसामयिक", "samsamayiki", "ca", "daily current affairs", "monthly current affairs",
+        "weekly current affairs", "news analysis", "editorial", "संपादकीय", "appointments", "नियुक्तियां",
+        "summits", "reports and indices", "रिपोर्ट एवं सूचकांक", "the hindu", "अखबार", "newspaper",
+    ],
+
+    # -- Free Books (17 keywords)
+    "Free Books": [
+        "free books", "free book", "free pdf books", "ebook", "e-book", "e book", "फ्री बुक", "फ्री बुक्स",
+        "निःशुल्क पुस्तक", "pdf books", "books pdf", "free notes", "handwritten notes", "हैंडराइटिंग नोट्स",
+        "हस्तलिखित नोट्स", "study material", "स्टडी मटेरियल",
     ],
 
 }

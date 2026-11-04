@@ -1,268 +1,330 @@
-# iamtghelp - Subject wise chapter keywords (SSC GD / Bihar style topics)
-# Video/PDF ke naam ya caption me inme se koi bhi shabd mile to wo us subject ke topic me jaayega.
-# Naya chapter jodna ho to us subject ki list me ek shabd (lowercase) add kar do.
-# English keywords shabd ke shuru se match hote hain (jaise "tense" => "tenses" me mile, "intense" me nahi).
-# Chhote (<=3 akshar) keywords poore shabd ki tarah match hote hain.
-# Order = group me topics isi kram me banenge.
+# iamtghelp - Auto subject-wise topics
+# Bot ko forum group me admin banao -> subject topics apne-aap ban jaate hain.
+# Files/posts ke naam + caption se subject pehchan kar sahi topic me bheji jaati hain.
 
-KEYWORDS = {
+import re
+import time
+import asyncio
+import logging
+from pyrogram import filters, enums, raw
+from shared_client import app
+from config import OWNER_ID
+from utils.func import db
+from utils.subject_keywords import KEYWORDS
 
-    # -- Maths (233 keywords)
-    "Maths": [
-        "maths", "math ", "mathematics", "गणित", "ganit", "quant", "quantitative", "arithmetic", "अंकगणित",
-        "number system", "संख्या पद्धति", "sankhya paddhati", "natural number", "whole number",
-        "prime number", "divisibility", "विभाज्यता", "vibhajyata", "remainder", "शेषफल", "unit digit",
-        "इकाई अंक", "digital sum", "डिजिटल सम", "factor", "गुणनखंड", "lcm", "hcf", "लघुत्तम", "महत्तम",
-        "ल.स.प", "म.स.प", "ls p", "fraction", "भिन्न", "decimal", "दशमलव", "bodmas", "vedic maths",
-        "calculation", "कैलकुलेशन", "square", "perfect square", "पूर्ण वर्ग", "cube", "square root",
-        "वर्गमूल", "cube root", "घनमूल", "पहाड़ा", "simplification", "सरलीकरण", "saralikaran",
-        "approximation", "सन्निकटन", "surds", "करणी", "indices", "घातांक", "ghatank", "quadratic", "द्विघात",
-        "dwighat", "linear equation", "रैखिक समीकरण", "inequalities", "percentage", "percent", "प्रतिशत",
-        "pratishat", "ratio", "अनुपात", "anupat", "proportion", "समानुपात", "average", "औसत", "ausat", "लाभ",
-        "हानि", "labh", "hani", "discount", "छूट", "chhoot", "marked price", "अंकित मूल्य",
-        "simple interest", "साधारण ब्याज", "saadharan byaj", "compound interest", "चक्रवृद्धि",
-        "chakravriddhi", "ब्याज", "byaj", "partnership", "साझेदारी", "sajhedari", "mishran", "alligation",
-        "एलीगेशन", "age", "आयु", "umar", "उम्र", "chain rule", "श्रृंखला नियम", "time and work",
-        "time & work", "समय और कार्य", "काम और समय", "kaam aur samay", "kaam samay", "work and wages",
-        "pipe and cistern", "pipes and cistern", "pipe & cistern", "नल और टंकी", "नल टंकी", "nal tanki",
-        "nal aur tanki", "cistern", "टंकी", "time speed distance", "time, speed", "speed distance",
-        "समय चाल दूरी", "चाल और दूरी", "chaal", "tsd", "boat and stream", "boat & stream", "नाव और धारा",
-        "naav", "रेलगाड़ी", "relative speed", "सापेक्ष", "circular motion", "clock problem", "algebra",
-        "बीजगणित", "beejganit", "polynomial", "बहुपद", "सर्वसमिका", "geometry", "ज्यामिति", "jyamiti",
-        "triangle", "त्रिभुज", "tribhuj", "circle", "वृत्त", "vritt", "quadrilateral", "चतुर्भुज", "polygon",
-        "बहुभुज", "lines and angles", "रेखा एवं कोण", "angle", "कोण", "congruent", "similar triangle",
-        "समरूप", "centroid", "circumcentre", "incentre", "orthocentre", "coordinate geometry", "निर्देशांक",
-        "tangent", "स्पर्श रेखा", "chord", "जीवा", "mensuration", "क्षेत्रमिति", "kshetramiti",
-        "area and perimeter", "क्षेत्रफल", "परिमाप", "volume", "आयतन", "surface area", "पृष्ठीय", "cylinder",
-        "बेलन", "cone", "शंकु", "sphere", "गोला", "cuboid", "trigonometry", "त्रिकोणमिति", "trikonmiti",
-        "height and distance", "ऊंचाई और दूरी", "unchai aur doori", "data interpretation",
-        "डेटा इंटरप्रिटेशन", "bar graph", "pie chart", "line graph", "table chart", "data sufficiency",
-        "probability", "प्रायिकता", "permutation", "combination", "क्रमचय", "संचय", "statistics",
-        "सांख्यिकी", "mean median", "माध्य", "माध्यिका", "बहुलक", "set theory", "समुच्चय", "progression",
-        "श्रेढ़ी", "arithmetic progression", "geometric progression", "ap gp", "logarithm", "लघुगणक",
-        "profit and loss", "profit & loss", "mixture and alligation", "घन और घनमूल", "problems on trains",
-        "trains", "रेलगाड़ी पर प्रश्न",
-    ],
+logger = logging.getLogger("iamtghelp")
+topics_col = db["subject_topics"]
 
-    # -- Reasoning (128 keywords)
-    "Reasoning": [
-        "reasoning", "रीजनिंग", "तर्कशक्ति", "तर्क शक्ति", "mental ability", "mental aptitude",
-        "logical reasoning", "verbal reasoning", "non verbal", "non-verbal", "analytical reasoning",
-        "coding decoding", "coding-decoding", "coding & decoding", "कोडिंग डिकोडिंग", "कोडिंग-डिकोडिंग",
-        "कोडिंग", "डिकोडिंग", "decoding", "coding", "letter coding", "number coding", "deciphering",
-        "direction sense", "direction and distance", "directions", "दिशा ज्ञान", "दिशा एवं दूरी",
-        "दिशा और दूरी", "दिशा", "disha gyan", "disha", "blood relation", "blood relations", "ब्लड रिलेशन",
-        "रक्त संबंध", "रक्त सम्बन्ध", "rakt sambandh", "family tree", "पारिवारिक संबंध", "ranking",
-        "order and ranking", "रैंकिंग", "क्रम व्यवस्था", "seating arrangement", "sitting arrangement",
-        "बैठक व्यवस्था", "circular arrangement", "linear arrangement", "arrangement", "puzzle", "पहेली",
-        "floor puzzle", "box puzzle", "day puzzle", "scheduling", "syllogism", "न्याय निगमन", "न्यायनिगमन",
-        "वाक्य तर्क", "venn", "venn diagram", "वेन आरेख", "वेन डायग्राम", "analogy", "सादृश्यता", "सादृश्य",
-        "classification", "वर्गीकरण", "odd one out", "number series", "alphabet series", "letter series",
-        "figure series", "संख्या श्रृंखला", "अक्षर श्रृंखला", "missing number", "लुप्त संख्या",
-        "alphabet test", "alpha numeric", "alphanumeric", "word formation", "शब्द निर्माण",
-        "dictionary order", "शब्दकोश क्रम", "meaningful word", "mathematical operations",
-        "गणितीय संक्रियाएं", "गणितीय संक्रिया", "mathematical operation", "equation based", "inequality",
-        "असमिका", "असमानता", "statement and conclusion", "कथन और निष्कर्ष", "statement conclusion",
-        "statement and assumption", "statement and argument", "course of action", "cause and effect",
-        "assertion and reason", "input output", "इनपुट आउटपुट", "data sufficiency", "decision making",
-        "clock", "घड़ी", "calendar", "कैलेंडर", "calender", "dice", "पासा", "cube and dice", "mirror image",
-        "दर्पण प्रतिबिंब", "water image", "जल प्रतिबिंब", "paper folding", "paper cutting", "कागज़ मोड़ना",
-        "embedded figure", "figure counting", "counting figures", "pattern completion", "figure completion",
-        "visual reasoning", "rule detection",
-    ],
+GENERAL = "General"
+WEAK = set()  # (generic fallback subject abhi nahi)
 
-    # -- English (76 keywords)
-    "English": [
-        "english", "grammar", "अंग्रेजी", "अंग्रेज़ी", "tense", "tenses", "preposition", "prepositions",
-        "conjunction", "conjunctions", "pronoun", "adjective", "adverb", "verb", "modals", "modal verbs",
-        "determiners", "subject verb agreement", "subject-verb", "sva", "active passive", "active voice",
-        "passive voice", "narration", "direct indirect", "direct speech", "reported speech",
-        "error detection", "error spotting", "spotting the error", "spot the error", "sentence improvement",
-        "sentence correction", "fill in the blanks", "fill in blanks", "cloze test", "cloze",
-        "reading comprehension", "comprehension", "para jumbles", "para jumble", "sentence rearrangement",
-        "jumbled", "one word substitution", "one word", "idioms", "phrases", "idioms and phrases",
-        "phrasal verb", "phrasal verbs", "synonyms", "antonyms", "synonym", "antonym", "spelling", "vocab",
-        "vocabulary", "word power", "homonyms", "homophones", "parts of speech", "degrees of comparison",
-        "clauses", "phrase", "question tag", "conditionals", "if clause", "letter writing", "essay writing",
-        "précis", "precis", "english literature", "articles in english", "a an the", "nouns",
-        "noun and pronoun",
-    ],
+# Topic naam -> keywords: utils/subject_keywords.py me hain (chapter-wise, English + Hindi).
+DEFAULT_SUBJECTS = dict(KEYWORDS)
+DEFAULT_SUBJECTS[GENERAL] = []
 
-    # -- Hindi (83 keywords)
-    "Hindi": [
-        "hindi", "हिंदी", "हिन्दी", "vyakaran", "व्याकरण", "हिंदी व्याकरण", "हिन्दी व्याकरण", "sandhi",
-        "संधि", "samas", "समास", "alankar", "अलंकार", "chhand", "छंद", "muhavare", "मुहावरे", "मुहावरा",
-        "lokokti", "लोकोक्ति", "कहावत", "paryayvachi", "पर्यायवाची", "paryayvaachi", "vilom", "विलोम",
-        "विपरीतार्थक", "anekarthi", "अनेकार्थी", "अनेकार्थक", "शब्द भेद", "शब्द शुद्धि", "वर्तनी",
-        "वाक्य शुद्धि", "वाक्यांश के लिए एक शब्द", "एक शब्द", "ek shabd", "अनेक शब्दों के लिए एक शब्द",
-        "upsarg", "उपसर्ग", "pratyay", "प्रत्यय", "karak", "कारक", "sarvanam", "सर्वनाम", "visheshan",
-        "विशेषण", "kriya", "क्रिया", "avyay", "अव्यय", "sangya", "संज्ञा", "vachya", "वाच्य", "तत्सम",
-        "तद्भव", "tatsam", "tadbhav", "देशज", "विदेशी शब्द", "apathit", "अपठित", "गद्यांश", "पद्यांश",
-        "patra lekhan", "पत्र लेखन", "nibandh", "निबंध", "हिंदी साहित्य", "हिन्दी साहित्य", "देवनागरी",
-        "वर्ण विचार", "विराम चिह्न", "रचना के आधार", "वाक्य भेद", "पदबंध", "हिंदी भाषा का इतिहास", "अशुद्धि",
-        "शुद्ध अशुद्ध", "रस के भेद", "vakya shuddhi",
-    ],
 
-    # -- Physics (117 keywords)
-    "Physics": [
-        "physics", "phy ", "भौतिक", "भौतिकी", "फिजिक्स", "bhautik", "units and measurement", "मात्रक",
-        "इकाई एवं मापन", "kinematics", "गतिकी", "equation of motion", "projectile", "प्रक्षेप्य", "newton",
-        "न्यूटन", "laws of motion", "गति के नियम", "friction", "घर्षण", "work energy power", "कार्य ऊर्जा",
-        "कार्य, ऊर्जा", "momentum", "संवेग", "gravitation", "गुरुत्वाकर्षण", "gravity", "circular motion",
-        "वृत्तीय गति", "rotational", "घूर्णन", "simple harmonic", "सरल आवर्त", "elasticity", "प्रत्यास्थता",
-        "surface tension", "पृष्ठ तनाव", "viscosity", "श्यानता", "fluid", "दाब", "density", "घनत्व",
-        "archimedes", "आर्किमिडीज", "ऊष्मा", "thermodynamics", "ऊष्मागतिकी", "temperature", "तापमान",
-        "calorimetry", "kinetic theory", "ध्वनि", "तरंग", "doppler", "optics", "प्रकाशिकी", "reflection",
-        "परावर्तन", "refraction", "अपवर्तन", "lens", "लेंस", "mirror", "दर्पण", "prism", "प्रिज्म",
-        "human eye", "मानव नेत्र", "electricity", "विद्युत", "current electricity", "धारा विद्युत", "ohm",
-        "ओम", "circuit", "परिपथ", "electrostatics", "स्थिर विद्युतिकी", "coulomb", "capacitor", "संधारित्र",
-        "magnetism", "चुंबकत्व", "magnetic", "चुंबकीय", "electromagnetic", "विद्युत चुंबकीय", "transformer",
-        "ट्रांसफार्मर", "atomic", "परमाणु", "nuclear", "नाभिकीय", "radioactivity", "रेडियोधर्मिता",
-        "semiconductor", "अर्धचालक", "modern physics", "आधुनिक भौतिकी", "photoelectric", "x-ray", "laser",
-        "लेजर", "vectors", "सदिश", "wave motion", "heat transfer", "light and optics", "प्रकाश परावर्तन",
-        "प्रकाश अपवर्तन", "बल एवं गति", "कार्य शक्ति ऊर्जा", "work power energy", "simple pendulum",
-        "pressure and fluids",
-    ],
+def _is_forum(chat):
+    """Topics wale group ko pehchano (pyrofork me type == FORUM hota hai)."""
+    if chat is None:
+        return False
+    if getattr(chat, "is_forum", None):
+        return True
+    return getattr(chat, "type", None) == enums.ChatType.FORUM
 
-    # -- Chemistry (87 keywords)
-    "Chemistry": [
-        "chemistry", "chem ", "रसायन", "रसायन विज्ञान", "केमिस्ट्री", "rasayan", "periodic table",
-        "आवर्त सारणी", "आवर्त तालिका", "atomic structure", "परमाणु संरचना", "परमाणु की संरचना",
-        "chemical bonding", "रासायनिक आबंधन", "chemical bond", "chemical reaction", "रासायनिक अभिक्रिया",
-        "रासायनिक अभिक्रियाएं", "acids bases", "acid base", "अम्ल क्षार", "अम्ल, क्षार", "अम्ल", "क्षार",
-        "लवण", "salts", "metals and non metals", "metals", "non metals", "धातु", "अधातु", "धातु एवं अधातु",
-        "carbon", "कार्बन", "carbon compounds", "कार्बनिक", "organic chemistry", "inorganic chemistry",
-        "physical chemistry", "hydrocarbon", "हाइड्रोकार्बन", "alkane", "alkene", "alkyne", "alcohol",
-        "ऐल्कोहॉल", "polymer", "बहुलक", "plastic", "mole concept", "मोल संकल्पना", "stoichiometry", "redox",
-        "ऑक्सीकरण", "अपचयन", "electrochemistry", "विद्युत रसायन", "equilibrium", "साम्य", "विलयन",
-        "thermochemistry", "ऊष्मा रसायन", "chemical kinetics", "अभिक्रिया वेग", "states of matter",
-        "पदार्थ की अवस्थाएं", "gas laws", "गैस नियम", "hardness of water", "जल की कठोरता", "fuel", "ईंधन",
-        "alloy", "मिश्रधातु", "fertilizer", "उर्वरक", "pollution chemistry", "isotopes", "समस्थानिक",
-        "अयस्क", "metallurgy", "धातुकर्म", "ph scale", "acid base and salts", "solutions chemistry",
-        "water chemistry", "matter chemistry",
-    ],
 
-    # -- Biology (109 keywords)
-    "Biology": [
-        "biology", "bio ", "जीव विज्ञान", "जीवविज्ञान", "बायोलॉजी", "jeev vigyan", "botany",
-        "वनस्पति विज्ञान", "zoology", "जंतु विज्ञान", "कोशिका", "koshika", "tissue", "ऊतक", "plant kingdom",
-        "पादप जगत", "animal kingdom", "जंतु जगत", "classification of living", "जीवों का वर्गीकरण",
-        "human body", "मानव शरीर", "digestive system", "पाचन तंत्र", "respiratory system", "श्वसन तंत्र",
-        "श्वसन", "circulatory system", "परिसंचरण", "blood", "रक्त", "heart", "हृदय", "nervous system",
-        "तंत्रिका तंत्र", "excretory system", "उत्सर्जन", "skeletal system", "कंकाल तंत्र",
-        "muscular system", "पेशी", "endocrine", "हार्मोन", "hormone", "reproduction", "प्रजनन",
-        "reproductive system", "genetics", "आनुवंशिकी", "heredity", "आनुवंशिकता", "dna", "rna", "chromosome",
-        "गुणसूत्र", "evolution", "photosynthesis", "प्रकाश संश्लेषण", "respiration in plants",
-        "transpiration", "वाष्पोत्सर्जन", "plant physiology", "morphology of flowering", "पुष्प", "diseases",
-        "रोग", "बीमारियां", "vitamins", "विटामिन", "nutrition", "पोषण", "balanced diet", "संतुलित आहार",
-        "ecology", "पारिस्थितिकी", "ecosystem", "पारितंत्र", "environment", "पर्यावरण", "biodiversity",
-        "जैव विविधता", "biotechnology", "जैव प्रौद्योगिकी", "microbes", "सूक्ष्मजीव", "bacteria", "जीवाणु",
-        "virus", "विषाणु", "fungi", "कवक", "immunity", "प्रतिरक्षा", "sense organs", "ज्ञानेन्द्रियाँ",
-        "organelle", "mitosis", "meiosis", "कोशिका विभाजन", "enzyme", "एंजाइम", "human physiology",
-        "cell biology", "cell structure", "cell division", "जैव विकास", "genes", "genetic", "hereditary",
-    ],
+async def _group_or_forum(_, __, m):
+    return bool(m.chat and m.chat.type in (enums.ChatType.GROUP, enums.ChatType.SUPERGROUP, enums.ChatType.FORUM))
 
-    # -- History (99 keywords)
-    "History": [
-        "history", "इतिहास", "itihas", "ancient history", "प्राचीन इतिहास", "प्राचीन भारत",
-        "medieval history", "मध्यकालीन", "मध्यकालीन इतिहास", "modern history", "आधुनिक इतिहास",
-        "आधुनिक भारत", "indus valley", "सिंधु घाटी", "हड़प्पा", "harappa", "vedic", "वैदिक", "mahajanapada",
-        "महाजनपद", "हर्षवर्धन", "sangam", "chola", "चोल", "pallava", "rajput", "राजपूत", "delhi sultanate",
-        "दिल्ली सल्तनत", "sultanate", "सल्तनत", "mughal", "मुगल", "akbar", "अकबर", "bhakti", "भक्ति आंदोलन",
-        "sufi", "सूफी", "maratha", "मराठा", "shivaji", "शिवाजी", "british", "east india company",
-        "ईस्ट इंडिया", "revolt of 1857", "1857", "freedom struggle", "स्वतंत्रता संग्राम",
-        "national movement", "राष्ट्रीय आंदोलन", "non cooperation", "असहयोग", "civil disobedience",
-        "सविनय अवज्ञा", "quit india", "भारत छोड़ो", "congress", "कांग्रेस", "revolutionary", "क्रांतिकारी",
-        "world history", "विश्व इतिहास", "french revolution", "फ्रांसीसी क्रांति", "russian revolution",
-        "रूसी क्रांति", "world war", "विश्व युद्ध", "renaissance", "पुनर्जागरण", "buddhism", "बौद्ध",
-        "jainism", "art and culture", "कला एवं संस्कृति", "कला और संस्कृति", "bihar history",
-        "बिहार का इतिहास", "मगध", "magadh", "नालंदा", "nalanda", "पाल वंश", "भारत का इतिहास", "gupta empire",
-        "gupta dynasty", "गुप्त साम्राज्य", "गुप्त वंश", "गुप्त काल", "maurya empire", "मौर्य साम्राज्य",
-        "मौर्य वंश", "मौर्य काल", "gandhi era", "गांधी युग", "harshvardhan", "भारत का स्वतंत्रता संग्राम",
-    ],
 
-    # -- Geography (125 keywords)
-    "Geography": [
-        "geography", "भूगोल", "bhugol", "indian geography", "भारत का भूगोल", "world geography",
-        "विश्व भूगोल", "physical geography", "भौतिक भूगोल", "human geography", "मानव भूगोल",
-        "economic geography", "आर्थिक भूगोल", "earth", "पृथ्वी", "solar system", "सौरमंडल", "universe",
-        "ब्रह्मांड", "latitude", "अक्षांश", "longitude", "देशांतर", "time zone", "समय क्षेत्र", "परिभ्रमण",
-        "परिक्रमण", "seasons", "ऋतु", "eclipse", "ग्रहण", "lithosphere", "स्थलमंडल", "rocks", "चट्टान",
-        "शैल", "earthquake", "भूकंप", "volcano", "ज्वालामुखी", "landforms", "स्थलाकृति", "atmosphere",
-        "वायुमंडल", "winds", "पवन", "pressure belt", "cyclone", "चक्रवात", "monsoon", "मानसून", "climate",
-        "जलवायु", "weather", "मौसम", "rainfall", "वर्षा", "ocean", "महासागर", "tides", "ज्वार भाटा",
-        "ocean currents", "महासागरीय धाराएं", "rivers", "नदियां", "नदियाँ", "नदी", "river system",
-        "नदी तंत्र", "lakes", "झील", "mountains", "पर्वत", "himalaya", "हिमालय", "plateau", "पठार", "plains",
-        "desert", "मरुस्थल", "islands", "द्वीप", "soil", "मृदा", "मिट्टी", "natural vegetation",
-        "प्राकृतिक वनस्पति", "forest", "agriculture", "कृषि", "crops", "फसल", "irrigation", "सिंचाई",
-        "minerals", "खनिज", "mining", "खनन", "industries", "उद्योग", "energy resources", "ऊर्जा संसाधन",
-        "population", "जनसंख्या", "census", "जनगणना", "transport", "परिवहन", "national park",
-        "राष्ट्रीय उद्यान", "wildlife sanctuary", "अभयारण्य", "map", "मानचित्र", "bihar geography",
-        "बिहार का भूगोल", "revolution and rotation", "earth rotation", "पृथ्वी की गतियां", "india size",
-        "size and location", "location and extent", "भारत का आकार", "भारत की स्थिति", "india location",
-    ],
+group_or_forum = filters.create(_group_or_forum)
 
-    # -- Polity (88 keywords)
-    "Polity": [
-        "polity", "civics", "constitution", "संविधान", "भारतीय संविधान", "राजव्यवस्था", "rajvyavastha",
-        "राजनीति", "राजनीति विज्ञान", "नागरिक शास्त्र", "नागरिकशास्त्र", "preamble", "प्रस्तावना",
-        "fundamental rights", "मौलिक अधिकार", "fundamental duties", "मौलिक कर्तव्य", "directive principles",
-        "dpsp", "नीति निर्देशक", "राज्य के नीति निदेशक", "citizenship", "नागरिकता", "amendment",
-        "constitutional amendment", "संविधान संशोधन", "parliament", "संसद", "lok sabha", "लोकसभा",
-        "rajya sabha", "राज्यसभा", "president", "राष्ट्रपति", "vice president", "उपराष्ट्रपति",
-        "prime minister", "प्रधानमंत्री", "council of ministers", "मंत्रिपरिषद", "governor", "राज्यपाल",
-        "chief minister", "मुख्यमंत्री", "state legislature", "विधानमंडल", "विधानसभा", "supreme court",
-        "सर्वोच्च न्यायालय", "उच्चतम न्यायालय", "high court", "उच्च न्यायालय", "judiciary", "न्यायपालिका",
-        "emergency", "आपातकाल", "election commission", "निर्वाचन आयोग", "चुनाव", "panchayati raj",
-        "पंचायती राज", "पंचायत", "municipality", "नगरपालिका", "local government", "स्थानीय स्वशासन", "cag",
-        "कैग", "finance commission", "वित्त आयोग", "upsc", "लोक सेवा आयोग", "union territory", "केंद्रशासित",
-        "federalism", "संघवाद", "अनुसूची", "अनुच्छेद", "anuchhed", "writs", "रिट", "lokpal", "लोकपाल", "rti",
-        "सूचना का अधिकार", "political science", "human rights", "मानवाधिकार",
-    ],
 
-    # -- Economics (78 keywords)
-    "Economics": [
-        "economics", "economy", "अर्थशास्त्र", "अर्थव्यवस्था", "arthvyavastha", "indian economy",
-        "भारतीय अर्थव्यवस्था", "gdp", "gnp", "national income", "राष्ट्रीय आय", "inflation", "मुद्रास्फीति",
-        "महंगाई", "deflation", "poverty", "गरीबी", "unemployment", "बेरोजगारी", "growth and development",
-        "आर्थिक विकास", "पंचवर्षीय योजना", "five year plan", "niti aayog", "नीति आयोग", "budget", "बजट",
-        "fiscal policy", "राजकोषीय नीति", "monetary policy", "मौद्रिक नीति", "rbi", "रिजर्व बैंक", "banking",
-        "बैंकिंग", "stock market", "शेयर बाजार", "sebi", "insurance", "बीमा", "gst", "जीएसटी", "subsidy",
-        "सब्सिडी", "demand and supply", "मांग और पूर्ति", "microeconomics", "सूक्ष्म अर्थशास्त्र",
-        "macroeconomics", "व्यष्टि", "समष्टि", "balance of payment", "भुगतान संतुलन", "foreign trade",
-        "विदेशी व्यापार", "wto", "imf", "world bank", "विश्व बैंक", "agriculture economy",
-        "भारतीय कृषि अर्थव्यवस्था", "industrial policy", "औद्योगिक नीति", "human development", "मानव विकास",
-        "bihar economy", "बिहार की अर्थव्यवस्था", "economic survey", "आर्थिक सर्वेक्षण", "banking awareness",
-        "bank and money", "money and banking", "मुद्रा और बैंकिंग", "tax system", "कर प्रणाली",
-        "demand supply", "मांग पूर्ति", "economic planning",
-    ],
+def _norm(text):
+    return f" {(text or '').lower()} "
 
-    # -- Static GK (57 keywords)
-    "Static GK": [
-        "gk", "gs", "g.k", "g.s", "general knowledge", "general studies", "सामान्य ज्ञान", "सामान्य अध्ययन",
-        "samanya gyan", "static gk", "स्टैटिक जीके", "bihar gk", "बिहार जीके", "बिहार सामान्य ज्ञान",
-        "bihar special", "india gk", "world gk", "awards", "पुरस्कार", "books and authors",
-        "पुस्तकें और लेखक", "important days", "महत्वपूर्ण दिवस", "sports", "खेलकूद", "olympic", "ओलंपिक",
-        "states and capitals", "राज्य और राजधानी", "राजधानी", "national symbols", "राष्ट्रीय चिह्न",
-        "important places", "महत्वपूर्ण स्थल", "schemes", "योजनाएं", "government schemes", "सरकारी योजनाएं",
-        "सूचकांक", "रक्षा क्षेत्र", "dance", "नृत्य", "music", "संगीत", "festival", "त्योहार", "fairs",
-        "मेले", "world organisations", "gk trick", "जीके ट्रिक", "one liner", "वन लाइनर", "gk darshan",
-        "जीके दर्शन", "static gs", "स्टैटिक gk",
-    ],
 
-    # -- Current Affairs (24 keywords)
-    "Current Affairs": [
-        "current affairs", "current affair", "करेंट अफेयर्स", "करंट अफेयर्स", "करेंट अफेयर", "करंट अफेयर",
-        "समसामयिकी", "समसामयिक", "samsamayiki", "ca", "daily current affairs", "monthly current affairs",
-        "weekly current affairs", "news analysis", "editorial", "संपादकीय", "appointments", "नियुक्तियां",
-        "summits", "reports and indices", "रिपोर्ट एवं सूचकांक", "the hindu", "अखबार", "newspaper",
-    ],
+def _split_chat_topic(cfg_chat):
+    """'-100123/45' -> (-100123, 45); '-100123' -> (-100123, None)"""
+    if cfg_chat is None:
+        return None, None
+    s = str(cfg_chat)
+    if "/" in s:
+        a, b = s.split("/", 1)
+        return int(a), int(b)
+    return int(s), None
 
-    # -- Free Books (17 keywords)
-    "Free Books": [
-        "free books", "free book", "free pdf books", "ebook", "e-book", "e book", "फ्री बुक", "फ्री बुक्स",
-        "निःशुल्क पुस्तक", "pdf books", "books pdf", "free notes", "handwritten notes", "हैंडराइटिंग नोट्स",
-        "हस्तलिखित नोट्स", "study material", "स्टडी मटेरियल",
-    ],
 
-}
+async def _get_doc(chat_id):
+    return await topics_col.find_one({"chat_id": int(chat_id)})
+
+
+def _kw_hit(kw, t):
+    k = kw.lower().strip()
+    if not k:
+        return False
+    if k.isascii():
+        pat = r"(?<![a-z0-9])" + re.escape(k) + (r"(?![a-z0-9])" if len(k) <= 3 else "")
+        return re.search(pat, t) is not None
+    return k in t
+
+
+def _match_subject(text, subjects):
+    """subjects: {name: {"id": topic_id, "kw": [...]}} -> (name, id) ya (None, None)"""
+    t = _norm(text)
+    best, best_len = None, 0
+    # "Science" generic hai (rasayan vigyan, jeev vigyan me bhi aata hai) -> sabse last me check
+    for weak_pass in (False, True):
+        for name, info in subjects.items():
+            if (name in WEAK) != weak_pass:
+                continue
+            for kw in info.get("kw", []):
+                if _kw_hit(kw, t) and len(kw.strip()) > best_len:
+                    best, best_len = name, len(kw.strip())
+        if best:
+            break
+    if best:
+        return best, subjects[best]["id"]
+    g = subjects.get(GENERAL)
+    return (GENERAL, g["id"]) if g else (None, None)
+
+
+_locks = {}
+_tried = {}
+
+
+async def _ensure_topics(chat_id):
+    """Topics abhi tak nahi bane to batch ke waqt khud bana deta hai (5 min me ek hi baar try)."""
+    chat_id = int(chat_id)
+    lock = _locks.setdefault(chat_id, asyncio.Lock())
+    async with lock:
+        doc = await _get_doc(chat_id)
+        have = (doc or {}).get("subjects", {})
+        if have and all(n in have for n in DEFAULT_SUBJECTS):
+            return
+        if time.time() - _tried.get(chat_id, 0) < 300:
+            return
+        _tried[chat_id] = time.time()
+        try:
+            chat = await app.get_chat(chat_id)
+            if not _is_forum(chat):
+                logger.error(f"auto topics: {chat_id} me Topics ON nahi hain")
+                return
+            created, err = await setup_topics(chat_id)
+            if err:
+                logger.error(f"auto topics error: {err}")
+        except Exception as e:
+            logger.error(f"auto topics failed: {e}")
+
+
+_last = {}
+
+
+async def resolve_topic(cfg_chat, text, sticky=False):
+    """
+    batch.py yahi call karta hai.
+    Return: (chat_id, topic_id). Agar user ne khud topic diya hai (-100xx/12) to wahi rahega.
+    Agar chat me subject topics setup hain to subject se topic chuna jaayega.
+    """
+    chat_id, topic_id = _split_chat_topic(cfg_chat)
+    if chat_id is None or topic_id is not None:
+        return chat_id, topic_id
+    try:
+        doc = await _get_doc(chat_id)
+        have = (doc or {}).get("subjects", {})
+        if not have or any(n not in have for n in DEFAULT_SUBJECTS):
+            await _ensure_topics(chat_id)
+            doc = await _get_doc(chat_id)
+            have = (doc or {}).get("subjects", {})
+        if have:
+            # purane/hataye gaye subjects (Sanskrit, Computer...) ignore; keywords = file ke default + /addkw wale extra
+            view = {}
+            for name in DEFAULT_SUBJECTS:
+                info = have.get(name)
+                if not info:
+                    continue
+                kws = list(DEFAULT_SUBJECTS[name]) + list(info.get("extra", []))
+                view[name] = {"id": info.get("id"), "kw": kws}
+            if view:
+                name, tid = _match_subject(text, view)
+                if name == GENERAL:
+                    # sirf link wala message (jaise YouTube link) -> pichhli post ke topic me hi bhejo
+                    last = _last.get(chat_id)
+                    if sticky and last and time.time() - last[1] < 180:
+                        return chat_id, last[0]
+                else:
+                    _last[chat_id] = (tid, time.time())
+                return chat_id, tid
+    except Exception as e:
+        logger.error(f"resolve_topic error: {e}")
+    return chat_id, None
+
+
+def _topic_id_from(res):
+    """messages.CreateForumTopic ke result se naye topic ka id nikalta hai."""
+    updates = getattr(res, "updates", None) or []
+    for u in updates:
+        m = getattr(u, "message", None)
+        if m is not None and type(getattr(m, "action", None)).__name__ == "MessageActionTopicCreate":
+            return m.id
+    for u in updates:
+        m = getattr(u, "message", None)
+        if m is not None and getattr(m, "id", None):
+            return m.id
+    raise RuntimeError("topic id nahi mila")
+
+
+async def create_topic(chat_id, title):
+    """pyrofork ka create_forum_topic is version me tuta hua hai, isliye seedha raw API call."""
+    r = await app.invoke(
+        raw.functions.messages.CreateForumTopic(
+            peer=await app.resolve_peer(chat_id),
+            title=title,
+            random_id=app.rnd_id(),
+        )
+    )
+    return _topic_id_from(r)
+
+
+async def setup_topics(chat_id):
+    """Group me missing subject topics banata hai. Return (created, failed_reason)."""
+    doc = await _get_doc(chat_id) or {"chat_id": int(chat_id), "subjects": {}}
+    subjects = doc.get("subjects", {})
+    created = []
+    for name, kws in DEFAULT_SUBJECTS.items():
+        if name in subjects:
+            continue
+        if name == GENERAL:
+            # group ka built-in General topic use hoga (id None => seedha General me jaata hai)
+            subjects[name] = {"id": None, "extra": []}
+            continue
+        try:
+            tid = await create_topic(chat_id, name)
+            subjects[name] = {"id": tid, "extra": []}
+            created.append(name)
+            await asyncio.sleep(0.7)  # flood se bachne ke liye
+        except Exception as e:
+            if created or subjects:
+                await topics_col.update_one({"chat_id": int(chat_id)}, {"$set": {"subjects": subjects}}, upsert=True)
+            return created, str(e)
+    await topics_col.update_one({"chat_id": int(chat_id)}, {"$set": {"subjects": subjects}}, upsert=True)
+    return created, None
+
+
+# ── Bot ko admin banaya -> auto setup ──────────────────────────────────────────
+@app.on_chat_member_updated()
+async def on_bot_admin(client, upd):
+    try:
+        new = upd.new_chat_member
+        if not new or not new.user or not new.user.is_self:
+            return
+        if new.status != enums.ChatMemberStatus.ADMINISTRATOR:
+            return
+        chat = upd.chat
+        if not _is_forum(chat):
+            await client.send_message(
+                chat.id,
+                "ℹ️ Is group me **Topics** chalu nahi hain.\n"
+                "Group Settings → Topics ON karo, fir mujhe 'Manage Topics' right ke saath admin banao "
+                "(ya /synctopics bhejo).\n\n"
+                "⚠️ Topics ON karne par group ki ID badal sakti hai. Naya ID dekhne ke liye /chatid bhejo.",
+            )
+            return
+        if not (new.privileges and new.privileges.can_manage_topics):
+            await client.send_message(chat.id, "⚠️ Mujhe **Manage Topics** admin right do, fir /synctopics bhejo.")
+            return
+        created, err = await setup_topics(chat.id)
+        msg = f"✅ Subject topics ready: {len(created)} naye topics bane."
+        if err:
+            msg = f"⚠️ Kuch topics nahi ban paaye: {err[:150]}"
+        await client.send_message(chat.id, msg + f"\n\nAb apni /settings → SETCHATID me `{chat.id}` daalo — files subject ke hisaab se apne-aap sahi topic me jaayengi.")
+    except Exception as e:
+        logger.error(f"on_bot_admin error: {e}")
+
+
+# ── Permission: bot owner YA us group ka admin ─────────────────────────────────
+async def _allowed(client, message):
+    try:
+        # anonymous admin (group ke naam se bheja gaya message)
+        if message.sender_chat and message.sender_chat.id == message.chat.id:
+            return True
+        if not message.from_user:
+            return False
+        uid = message.from_user.id
+        if uid in OWNER_ID:
+            return True
+        m = await client.get_chat_member(message.chat.id, uid)
+        if m.status in (enums.ChatMemberStatus.OWNER, enums.ChatMemberStatus.ADMINISTRATOR):
+            return True
+        await message.reply(f"⛔ Sirf owner/admin use kar sakta hai.\nTumhari ID: `{uid}`")
+        return False
+    except Exception as e:
+        logger.error(f"_allowed error: {e}")
+        return False
+
+
+# ── Commands (owner / group admin) ─────────────────────────────────────────────
+@app.on_message(filters.command("synctopics") & group_or_forum)
+async def sync_cmd(client, message):
+    if not await _allowed(client, message):
+        return
+    if not _is_forum(message.chat):
+        await message.reply(f"Pehle group me Topics ON karo.\n🆔 Group ID: `{message.chat.id}`")
+        return
+    created, err = await setup_topics(message.chat.id)
+    res = f"✅ {len(created)} topics bane." if not err else f"⚠️ Error: {err[:150]}\nCreated: {len(created)}"
+    await message.reply(res + f"\n\n🆔 Group ID: `{message.chat.id}`\n/settings → SETCHATID me yahi ID daalo.")
+
+
+@app.on_message(filters.command("chatid") & group_or_forum)
+async def chatid_cmd(client, message):
+    if not await _allowed(client, message):
+        return
+    await message.reply(
+        f"🆔 Group ID: `{message.chat.id}`\n"
+        f"Topics: {'ON ✅' if _is_forum(message.chat) else 'OFF ❌'}\n\n"
+        "/settings → SETCHATID me yahi ID daalo."
+    )
+
+
+@app.on_message(filters.command("topics") & group_or_forum)
+async def list_cmd(client, message):
+    if not await _allowed(client, message):
+        return
+    doc = await _get_doc(message.chat.id)
+    if not doc or not doc.get("subjects"):
+        await message.reply("Topics setup nahi hain. /synctopics bhejo.")
+        return
+    lines = []
+    for n in DEFAULT_SUBJECTS:
+        info = doc["subjects"].get(n)
+        mark = "✅" if info else "❌ (naya, /synctopics se banega)"
+        sample = ", ".join(DEFAULT_SUBJECTS[n][:4]) or "default"
+        extra = info.get("extra", []) if info else []
+        lines.append(f"• **{n}** {mark} — {sample}" + (f" (+{', '.join(extra)})" if extra else ""))
+    await message.reply("📚 **Subject topics**\n\n" + "\n".join(lines) +
+                        "\n\n`/addkw Subject keyword` se keyword jodo.")
+
+
+@app.on_message(filters.command("addkw") & group_or_forum)
+async def addkw_cmd(client, message):
+    if not await _allowed(client, message):
+        return
+    body = message.text.split(None, 1)[1].strip() if len(message.text.split(None, 1)) > 1 else ""
+    key, kw = None, ""
+    for n in sorted(DEFAULT_SUBJECTS, key=len, reverse=True):   # "Current Affairs" jaise 2 shabd wale naam bhi
+        if body.lower().startswith(n.lower() + " "):
+            key, kw = n, body[len(n):].strip().lower()
+            break
+    if not key or not kw:
+        await message.reply("Use: `/addkw Maths nal tanki`\n`/addkw Current Affairs monthly capsule`")
+        return
+    doc = await _get_doc(message.chat.id)
+    subj = (doc or {}).get("subjects", {})
+    if key not in subj:
+        await message.reply("Is subject ka topic abhi bana nahi hai. Pehle /synctopics bhejo.")
+        return
+    extra = subj[key].setdefault("extra", [])
+    if kw not in extra:
+        extra.append(kw)
+    await topics_col.update_one({"chat_id": message.chat.id}, {"$set": {"subjects": subj}})
+    await message.reply(f"✅ **{key}** me keyword jud gaya: `{kw}`")

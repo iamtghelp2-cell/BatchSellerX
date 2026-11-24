@@ -1,4 +1,4 @@
-telethon
+telethon>=1.37.0
 python-dotenv
 psutil
 opencv-python-headless
@@ -20,4 +20,5 @@ mutagen
 yt-dlp
 requests
 cryptography
+
 

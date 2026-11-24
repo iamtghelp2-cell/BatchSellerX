@@ -28,10 +28,10 @@ MONGO_DB     = os.getenv("MONGO_DB", "")
 DB_NAME      = os.getenv("DB_NAME", "telegram_downloader")
 
 # ─── OWNER / CONTROL SETTINGS ───────────────────────────────────────────────────
-OWNER_ID     = list(map(int, os.getenv("OWNER_ID", "7951185227").split()))  # space-separated list
+OWNER_ID     = list(map(int, os.getenv("OWNER_ID", "7732591949").split()))  # space-separated list
 STRING       = os.getenv("STRING", None)  # optional session string
-LOG_GROUP    = int(os.getenv("LOG_GROUP", "-1003506524877"))
-FORCE_SUB    = int(os.getenv("FORCE_SUB", "-1004496131354"))
+LOG_GROUP    = int(os.getenv("LOG_GROUP", "-1004353474741"))
+FORCE_SUB    = int(os.getenv("FORCE_SUB", "-1004370640130"))
 
 # ─── SECURITY KEYS ──────────────────────────────────────────────────────────────
 MASTER_KEY   = os.getenv("MASTER_KEY", "gK8HzLfT9QpViJcYeB5wRa3DmN7P2xUq")  # session encryption
